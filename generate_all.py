@@ -17,4 +17,4 @@ for name in firm_names:
         "--output", f"pdfs/benchmarking_{safe}.pdf",
         "--execute-params", f'firm="{name}"'
     ])
-    
+     
