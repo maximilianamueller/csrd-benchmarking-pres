@@ -37,7 +37,7 @@ jobs:
           python generate_all.py
 
       - name: Upload PDFs
-        uses: actions/upload-artifact@v3@8a3449e20239d59c7697400fbe831514c7c70d2d
+        uses: actions/upload-artifact@8a3449e20239d59c7697400fbe831514c7c70d2d
         with:
           name: csrd-pdfs
           path: pdfs/
