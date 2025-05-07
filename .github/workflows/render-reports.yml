@@ -1,0 +1,43 @@
+name: Render CSRD Reports
+
+on:
+  push:
+    paths:
+      - '**.qmd'
+      - '**.py'
+      - '**.xlsx'
+      - '**.png'
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          sudo apt-get update
+          sudo apt-get install -y pandoc texlive-latex-base texlive-fonts-recommended texlive-latex-extra
+
+      - name: Install Quarto
+        run: |
+          curl -LO https://quarto.org/download/latest/quarto-linux-amd64.deb
+          sudo dpkg -i quarto-linux-amd64.deb
+
+      - name: Render Reports
+        run: |
+          mkdir -p pdfs
+          python generate_all.py
+
+      - name: Upload PDFs
+        uses: actions/upload-artifact@v3
+        with:
+          name: csrd-pdfs
+          path: pdfs/
