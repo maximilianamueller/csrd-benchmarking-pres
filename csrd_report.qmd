@@ -1,0 +1,107 @@
+---
+title: "CSRD Report Benchmarking"
+format: pdf
+params:
+  firm: "Deutsche Post AG"
+jupyter: python3
+---
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+df = pd.read_excel("report_data.xlsx")
+firm_name = params["firm"]
+firm = df[df["name"] == firm_name].iloc[0]
+pages = firm["pagespdf"]
+mean_pages = df["pagespdf"].mean()
+counts, bins = np.histogram(df["pagespdf"].dropna(), bins=30)
+bin_width = bins[1] - bins[0]
+bin_index = np.digitize(pages, bins) - 1
+bin_index = min(bin_index, len(counts) - 1)
+```
+
+## Executive Summary
+
+This presentation benchmarks **`r params["firm"]`**'s 2024 CSRD sustainability statement against the statements of  
+**`r df["name"].nunique() - 1`** firms from the first CSRD wave.
+
+We benchmark statements based on their **length**, **topical focus**, and other textual characteristics  
+such as **tone**, use of **tables**, and **numbers**.
+
+---
+
+## Distribution of Report Lengths
+
+```{python}
+fig, ax = plt.subplots(figsize=(10, 5))
+for i in range(len(counts)):
+    color = "dodgerblue" if i == bin_index else "lightgrey"
+    ax.bar(bins[i], counts[i], width=bin_width, align='edge', color=color, edgecolor="black")
+ax.axvline(mean_pages, color="grey", linestyle="--", linewidth=2, label=f"Average: {mean_pages:.1f} pages")
+ax.axvline(pages, color="red", linestyle="--", linewidth=2, label=f"{firm_name}: {pages} pages")
+ax.set_title("Distribution of Report Lengths (All Data)")
+ax.set_xlabel("Report Pages")
+ax.set_ylabel("Number of Companies")
+ax.legend()
+plt.tight_layout()
+fig
+```
+
+---
+
+## Average Report Length by Country
+
+```{python}
+avg = df.groupby("country")["pagespdf"].mean().sort_values()
+labels = [f"{c} ({(df['country'] == c).sum()} firms)" for c in avg.index]
+fig, ax = plt.subplots(figsize=(10, 7))
+bars = ax.barh(labels, avg.values, color="lightgrey")
+for i, c in enumerate(avg.index):
+    if c == firm["country"]:
+        bars[i].set_color("dodgerblue")
+ax.axvline(pages, color="red", linestyle="--")
+ax.set_title("Average Report Pages by Country")
+plt.tight_layout()
+fig
+```
+
+---
+
+## Average Report Length by SASB Sector
+
+```{python}
+avg = df.groupby("sasb_sector")["pagespdf"].mean().sort_values()
+labels = [f"{s} ({(df['sasb_sector'] == s).sum()} firms)" for s in avg.index]
+fig, ax = plt.subplots(figsize=(10, 7))
+bars = ax.barh(labels, avg.values, color="lightgrey")
+for i, s in enumerate(avg.index):
+    if s == firm["sasb_sector"]:
+        bars[i].set_color("dodgerblue")
+ax.axvline(pages, color="red", linestyle="--")
+ax.set_title("Average Report Pages by SASB Sector")
+plt.tight_layout()
+fig
+```
+
+---
+
+## Average Report Length by Market Cap Group
+
+```{python}
+df["mcap_decile"] = pd.to_numeric(df["mcap_decile"], errors="coerce")
+df["mcap_group"] = pd.cut(df["mcap_decile"], bins=[0, 3, 7, 10], labels=["Small-cap", "Mid-cap", "Large-cap"])
+avg = df.groupby("mcap_group")["pagespdf"].mean()
+order = ["Large-cap", "Mid-cap", "Small-cap"]
+fig, ax = plt.subplots(figsize=(8, 5))
+bars = ax.barh(order, avg.loc[order], color="lightgrey")
+group = pd.cut([firm["mcap_decile"]], bins=[0, 3, 7, 10], labels=order)[0]
+bars[order.index(group)].set_color("dodgerblue")
+ax.axhline(0.5, color="black", linestyle=":")
+ax.axhline(1.5, color="black", linestyle=":")
+ax.axvline(pages, color="red", linestyle="--")
+ax.set_title("Average Report Pages by Market Cap Group")
+plt.tight_layout()
+fig
+```
